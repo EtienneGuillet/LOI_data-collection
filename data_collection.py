@@ -1,38 +1,44 @@
-import requests
-import pandas as pd
+from riotwatcher import LolWatcher, ApiError
+import json
 
-api_key = "RGAPI-c5e744ba-2a89-424b-a66a-807fea83c360"
+lol_watcher = LolWatcher('RGAPI-0f6d97b7-8df9-44c0-aedd-44243730acde')
 
-challenger = 'https://euw1.api.riotgames.com/lol/league/v4/challengerleagues/by-queue/RANKED_SOLO_5x5?api_key=' + api_key
-grandmaster = 'https://euw1.api.riotgames.com/lol/league/v4/grandmasterleagues/by-queue/RANKED_SOLO_5x5?api_key=' + api_key
-master = 'https://euw1.api.riotgames.com/lol/league/v4/masterleagues/by-queue/RANKED_SOLO_5x5?api_key=' + api_key
+region = 'euw1'
+region_match = 'EUROPE'
+queue = "RANKED_SOLO_5x5"
+json_file = 'matches.json'
 
-data = requests.get(challenger)
-league_df = pd.DataFrame(data.json())
+challengers = lol_watcher.league.challenger_by_queue(region, queue)
+masters = lol_watcher.league.masters_by_queue(region, queue)
+grandmasters = lol_watcher.league.grandmaster_by_queue(region, queue)
 
-league_df.reset_index(inplace=True)
-league_entries_df = pd.DataFrame(dict(league_df['entries'])).T 
-league_df = pd.concat([league_df, league_entries_df], axis=1)
-league_df = league_df.drop(['index', 'queue', 'name', 'leagueId', 'entries', 'rank'], axis=1)
-league_df.info()
+players = [*challengers['entries'], *grandmasters['entries'], *masters['entries']]
 
-for i in range(len(league_df)):
-    print(i, len(league_df))
-    # if (i > 3): 
-    #     break
-    try:
-        request_url = 'https://euw1.api.riotgames.com/lol/league/v4/entries/by-summoner/' + league_df['summonerId'].iloc[i] + '?api_key=' + api_key 
-        r = requests.get(request_url)
-        print(r.json())
-            
-        while r.status_code == 429:
-            request_url = 'https://euw1.api.riotgames.com/lol/league/v4/entries/by-summoner/' + league_df['summonerId'].iloc[i] + '?api_key=' + api_key 
-            r = requests.get(request_url)
-            
-        # account_id = r.json()['summonerId']
-        # league_df.iloc[i, -1] = account_id
-    except:
-        pass
+summoners_puuid = []
+i= 0
 
+for player in players:
+    i += 1
+    summoner = lol_watcher.summoner.by_id(region, player['summonerId'])
+    summoners_puuid.append(summoner['puuid'])
+    if (i == 3):
+        break
 
-league_df.to_csv('test.csv',index=False)
+matches_id = []
+
+for summoner_puuid in summoners_puuid:
+    matches_list = lol_watcher.match.matchlist_by_puuid(region_match, summoner_puuid)
+    for match_list in matches_list:
+        matches_id.append(match_list)
+
+matches_data = []
+
+for match_id in matches_id:
+    match_data = lol_watcher.match.by_id(region_match, match_id)
+    matches_data.append(match_data)
+
+fileVariable = open(json_file, 'r+')
+fileVariable.truncate(0)
+fileVariable.close()
+with open(json_file, 'w') as outfile:
+    json.dump(matches_data, outfile)
