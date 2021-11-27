@@ -3,8 +3,16 @@ import json
 
 lol_watcher = LolWatcher('RGAPI-0f6d97b7-8df9-44c0-aedd-44243730acde')
 
-region = 'euw1'
-region_match = 'EUROPE'
+# region = 'euw1'
+region = 'na1'
+# region = 'kr'
+
+
+# region_match = 'EUROPE'
+region_match = 'AMERICAS'
+# region_match = 'ASIA'
+
+
 queue = "RANKED_SOLO_5x5"
 json_file = 'matches.json'
 
@@ -21,7 +29,7 @@ for player in players:
     i += 1
     summoner = lol_watcher.summoner.by_id(region, player['summonerId'])
     summoners_puuid.append(summoner['puuid'])
-    if (i == 3):
+    if (i == 20):
         break
 
 matches_id = []
@@ -34,6 +42,7 @@ for summoner_puuid in summoners_puuid:
 matches_data = []
 
 for match_id in matches_id:
+    print(f'Match found - ID: {match_id}')
     match_data = lol_watcher.match.by_id(region_match, match_id)
     matches_data.append(match_data)
 

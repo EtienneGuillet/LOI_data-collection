@@ -8,9 +8,15 @@ firebase_admin.initialize_app(cred, {
 })
 
 db = firestore.client()
-doc_ref = db.collection(u'matches').document(u'EUW').collection('matches_data')
+doc_ref = db.collection(u'matches').document(u'NA').collection('matches_data')
 
 with open("matches.json", "r") as f:
 	file_contents = json.load(f)
 for match_data in file_contents:
-	doc_ref.document().set(match_data)
+	matchId = match_data['metadata']['matchId']
+	doc = doc_ref.document(matchId).get()
+	if doc.exists:
+		print(f'Match data already on database: {matchId}')
+	else:
+		doc_ref.document(matchId).set(match_data)
+		print(f'Added new match data: {matchId}')
