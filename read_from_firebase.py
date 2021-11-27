@@ -1,10 +1,11 @@
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-def fetch_matches_data(region):
-    return db.collection(u'matches').document(u'' + region).collection('matches_data')
+def fetch_matches_data(region = "EUW", rank = "challenger"):
+    return db.collection(u'matches').document(u'' + region).collection(rank)
 
 regions = ["EUW", "KR", "NA"]
+ranks = ["iron", "bronze", "silver", "gold", "platinium", "diamond", "master", "grandmaster", "challenger"]
 
 cred = credentials.Certificate("./league-of-intelligence-firebase-adminsdk-82djt-58c573b384.json")
 firebase_admin.initialize_app(cred, {
@@ -13,11 +14,12 @@ firebase_admin.initialize_app(cred, {
 db = firestore.client()
 
 for region in regions:
-    doc_ref = fetch_matches_data(region)
-    docs = doc_ref.stream()
+    for rank in ranks:
+        doc_ref = fetch_matches_data(region, rank)
+        docs = doc_ref.stream()
 
-    for doc in docs:
-        print(f'{doc.id} => {doc.to_dict()}')
+        for doc in docs:
+            print(f'{doc.id} => {doc.to_dict()}')
 
 
 
